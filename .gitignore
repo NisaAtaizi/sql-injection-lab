@@ -1,0 +1,19 @@
+# Gizli ve yerel yapılandırma dosyaları (Asla GitHub'a gitmez)
+config.local.php
+.env
+.env.local
+
+# İşletim sistemi dosyaları
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE ve Kod Editörü ayarları
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Geçici ve log dosyaları
+*.log
+scratch/

